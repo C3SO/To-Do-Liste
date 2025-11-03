@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemeinsame To-Do-Liste</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+        h1 {
+            color: #1f2937;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .alert {
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .alert-text {
+            font-size: 0.875rem;
+            color: #92400e;
+        }
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        #todoInput {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+        #todoInput:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-add {
+            background: #6366f1;
+            color: white;
+        }
+        .btn-add:hover {
+            background: #4f46e5;
+        }
+        .btn-add:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .todo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .todo-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 0.5rem;
+        }
+        .checkbox {
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .checkbox.checked {
+            background: #10b981;
+            border-color: #10b981;
+        }
+        .checkbox svg {
+            display: none;
+            width: 1rem;
+            height: 1rem;
+            color: white;
+        }
+        .checkbox.checked svg {
+            display: block;
+        }
+        .todo-text {
+            flex: 1;
+            color: #1f2937;
+        }
+        .todo-text.completed {
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+        .btn-delete {
+            background: transparent;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+        }
+        .loading {
+            text-align: center;
+            color: #6b7280;
+            padding: 2rem;
+        }
+        .spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid #e5e7eb;
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .empty-state {
+            text-align: center;
+            color: #9ca3af;
+            padding: 2rem;
+        }
+        .footer {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        .stats {
+            text-align: center;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        .status {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #10b981;
+            margin-top: 0.5rem;
+        }
+        .setup-box {
+            background: #dbeafe;
+            border: 2px solid #3b82f6;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .setup-box h3 {
+            color: #1e40af;
+            margin-bottom: 1rem;
+        }
+        .setup-box code {
+            background: #1e3a8a;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span>🌐</span> Gemeinsame To-Do-Liste</h1>
+
+        <div id="setupMessage" class="setup-box">
+            <h3>⚙️ Firebase Setup erforderlich</h3>
+            <p style="margin-bottom: 1rem; color: #1e3a8a;">
+                Diese Datei nutzt Firebase für gemeinsame Synchronisation.<br>
+                Scrolle nach unten zum <code>&lt;script&gt;</code> Bereich und füge deine Firebase Config ein!
+            </p>
+            <p style="color: #1e40af;">
+                Suche nach: <code>HIER_EINFÜGEN</code>
+            </p>
+        </div>
+
+        <div id="app" style="display: none;">
+            <div class="alert">
+                <div class="alert-text">
+                    <strong>👥 Geteilter Modus aktiv!</strong> Alle Änderungen werden in Echtzeit synchronisiert.
+                </div>
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="todoInput" placeholder="Neue Aufgabe eingeben...">
+                <button class="btn btn-add" id="addBtn" onclick="addTodo()">+ Hinzufügen</button>
+            </div>
+
+            <div id="todoList" class="todo-list"></div>
+
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 1rem;">Lade Aufgaben...</p>
+            </div>
+
+            <div class="footer">
+                <div class="stats">
+                    <span id="stats">0 von 0 Aufgaben erledigt</span>
+                </div>
+                <div class="status">🌐 Echtzeit-Synchronisation aktiv</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // ========================================
+        // 🔥 HIER_EINFÜGEN: Deine Firebase Config
+        // ========================================
+        const firebaseConfig = { apiKey: "AIzaSyCcHLFkUiM7Zn0_mztDVbgdXxYZ55Ot52w",
+  authDomain: "tasklist-c3so.firebaseapp.com",
+  projectId: "tasklist-c3so",
+  storageBucket: "tasklist-c3so.firebasestorage.app",
+  messagingSenderId: "185325625633",
+  appId: "1:185325625633:web:a52f0ff9bdeca0e1d8de60"
+        };
+        // ========================================
+
+        // Prüfe ob Config gesetzt wurde
+        if (firebaseConfig.apiKey === "DEIN_API_KEY_HIER") {
+            document.getElementById('setupMessage').style.display = 'block';
+            document.getElementById('app').style.display = 'none';
+            console.error('⚠️ Firebase Config fehlt! Bitte oben einfügen.');
+        } else {
+            document.getElementById('setupMessage').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            
+            // Firebase initialisieren
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            const todosCollection = collection(db, 'todos');
+
+            let todos = [];
+
+            // Echtzeit-Listener
+            const q = query(todosCollection, orderBy('createdAt', 'asc'));
+            onSnapshot(q, (snapshot) => {
+                todos = [];
+                snapshot.forEach((doc) => {
+                    todos.push({ id: doc.id, ...doc.data() });
+                });
+                renderTodos();
+                document.getElementById('loading').style.display = 'none';
+            });
+
+            // Neue Aufgabe
+            window.addTodo = async function() {
+                const input = document.getElementById('todoInput');
+                const text = input.value.trim();
+                
+                if (text) {
+                    const addBtn = document.getElementById('addBtn');
+                    addBtn.disabled = true;
+                    
+                    try {
+                        await addDoc(todosCollection, {
+                            text: text,
+                            completed: false,
+                            createdAt: new Date().toISOString()
+                        });
+                        input.value = '';
+                    } catch (error) {
+                        alert('Fehler: ' + error.message);
+                    } finally {
+                        addBtn.disabled = false;
+                    }
+                }
+            };
+
+            // Toggle
+            window.toggleTodo = async function(id) {
+                const todo = todos.find(t => t.id === id);
+                if (todo) {
+                    await updateDoc(doc(db, 'todos', id), {
+                        completed: !todo.completed
+                    });
+                }
+            };
+
+            // Löschen
+            window.deleteTodo = async function(id) {
+                await deleteDoc(doc(db, 'todos', id));
+            };
+
+            // Rendern
+            function renderTodos() {
+                const list = document.getElementById('todoList');
+                const completed = todos.filter(t => t.completed).length;
+                
+                document.getElementById('stats').textContent = `✓ ${completed} von ${todos.length} erledigt`;
+
+                if (todos.length === 0) {
+                    list.innerHTML = '<div class="empty-state">Keine Aufgaben. Füge die erste hinzu!</div>';
+                    return;
+                }
+
+                list.innerHTML = todos.map(todo => `
+                    <div class="todo-item">
+                        <div class="checkbox ${todo.completed ? 'checked' : ''}" onclick="toggleTodo('${todo.id}')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <span class="todo-text ${todo.completed ? 'completed' : ''}">${escapeHtml(todo.text)}</span>
+                        <button class="btn-delete" onclick="deleteTodo('${todo.id}')">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            document.getElementById('todoInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') addTodo();
+            });
+        }
+    </script>
+</body>
+</html>
